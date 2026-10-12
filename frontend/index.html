@@ -2,329 +2,523 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NOC Syslog Center</title>
 
-    <style>
-        
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-        }
+<title>NOC Syslog Center</title>
 
-        body{
-            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background:#f4f6f9;
-            color:#333;
-            padding:30px;
-        }
+<style>
 
-        .header{
-            text-align:center;
-            margin-bottom:40px;
-        }
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
-        .header h1{
-            color:#1f2937;
-            font-size:36px;
-            margin-bottom:10px;
-        }
+body{
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background:#f4f6f9;
+    color:#333;
+    padding:30px;
+}
 
-        .header p{
-            color:#6b7280;
-        }
+.header{
+    text-align:center;
+    margin-bottom:30px;
+}
 
-        .cards{
-            display:grid;
-            grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-            gap:20px;
-            margin-bottom:40px;
-        }
+.header h1{
+    color:#1f2937;
+    font-size:40px;
+}
 
-        .card{
-            border-radius:15px;
-            padding:25px;
-            color:white;
-            box-shadow:0 4px 12px rgba(0,0,0,.15);
-            transition:0.3s;
-        }
+.header p{
+    color:#6b7280;
+    margin-top:10px;
+}
 
-        .card:hover{
-            transform:translateY(-5px);
-        }
+#reloj{
+    margin-top:15px;
+    font-size:18px;
+    font-weight:bold;
+    color:#2563eb;
+}
 
-        .card h3{
-            margin-bottom:10px;
-            font-size:18px;
-        }
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+    margin-bottom:25px;
+}
 
-        .numero{
-            font-size:48px;
-            font-weight:bold;
-        }
+.card{
+    border-radius:15px;
+    padding:20px;
+    color:white;
+    text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.15);
+    transition:0.3s;
+}
 
-        .total{
-            background:#2563eb;
-        }
+.card:hover{
+    transform:translateY(-4px);
+}
 
-        .criticos{
-            background:#dc2626;
-        }
+.card h3{
+    margin-bottom:10px;
+}
 
-        .errores{
-            background:#ea580c;
-        }
+.numero{
+    font-size:42px;
+    font-weight:bold;
+}
 
-        .advertencias{
-            background:#ca8a04;
-        }
+.total{
+    background:#2563eb;
+}
 
-        .informativos{
-            background:#16a34a;
-        }
+.criticos{
+    background:#dc2626;
+}
 
-        .seccion{
-            background:white;
-            border-radius:15px;
-            padding:25px;
-            box-shadow:0 4px 12px rgba(0,0,0,.08);
-        }
+.errores{
+    background:#ea580c;
+}
 
-        .seccion h2{
-            margin-bottom:20px;
-            color:#1f2937;
-        }
+.advertencias{
+    background:#ca8a04;
+}
 
-        table{
-            width:100%;
-            border-collapse:collapse;
-        }
+.informativos{
+    background:#16a34a;
+}
 
-        th{
-            background:#1f2937;
-            color:white;
-            padding:12px;
-        }
+.incidentes{
+    background:#7c3aed;
+}
 
-        td{
-            padding:12px;
-            border-bottom:1px solid #e5e7eb;
-        }
+.abiertos{
+    background:#dc2626;
+}
 
-        tr:hover{
-            background:#f9fafb;
-        }
+.cerrados{
+    background:#16a34a;
+}
 
-        .critical{
-            color:#dc2626;
-            font-weight:bold;
-        }
+.estado-ok{
+    background:#16a34a;
+    color:white;
+    padding:20px;
+    border-radius:15px;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:25px;
+}
 
-        .error{
-            color:#ea580c;
-            font-weight:bold;
-        }
+.estado-alerta{
+    background:#dc2626;
+    color:white;
+    padding:20px;
+    border-radius:15px;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:25px;
+}
 
-        .warning{
-            color:#ca8a04;
-            font-weight:bold;
-        }
+.seccion{
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    margin-top:25px;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
 
-        .informational{
-            color:#16a34a;
-            font-weight:bold;
-        }
+.seccion h2{
+    margin-bottom:25px;
+    text-align:center;
+    color:#1f2937;
+}
 
-        .footer{
-            text-align:center;
-            margin-top:30px;
-            color:#6b7280;
-            font-size:14px;
-        }
+.filtros{
+    margin-bottom:20px;
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:10px;
+}
 
-        .incidentes{
-             background:#7c3aed;
-        }
+.filtros button{
+    background:#25eb9f;
+    color:white;
+    border:none;
+    padding:10px 15px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:.3s;
+}
 
-        .abiertos{
-             background:#dc2626;
-        }
+.filtros button:hover{
+    background:#010614;
+}
 
-        .cerrados{
-             background:#16a34a;
-        }
+table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+}
 
-        
+th{
+    background:#1f2937;
+    color:white;
+    padding:14px;
+    text-align:center;
+}
 
-    </style>
+td{
+    padding:12px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:center;
+    vertical-align:middle;
+}
+
+tr:hover{
+    background:#f5f5f5;
+}
+
+#tablaEventos td:nth-child(5){
+    text-align:left;
+}
+
+.critical{
+    color:#dc2626;
+    font-weight:bold;
+}
+
+.error{
+    color:#ea580c;
+    font-weight:bold;
+}
+
+.warning{
+    color:#ca8a04;
+    font-weight:bold;
+}
+
+.informational{
+    color:#16a34a;
+    font-weight:bold;
+}
+
+.estado-abierto{
+    color:#dc2626;
+    font-weight:bold;
+}
+
+.estado-cerrado{
+    color:#16a34a;
+    font-weight:bold;
+}
+
+.footer{
+    text-align:center;
+    margin-top:30px;
+    color:#6b7280;
+    font-size:14px;
+}
+
+</style>
 
 </head>
 
 <body>
 
-    <div class="header">
-        <h1>🚀 NOC Syslog Center</h1>
-        <p>Dashboard de monitoreo y clasificación de eventos Syslog</p>
-    </div>
+<div class="header">
 
-    <div id="cards"></div>
+    <h1>🚀 NOC Syslog Center</h1>
 
-    <div id="cardsIncidents"></div>
+    <p>Dashboard de monitoreo y clasificación de eventos Syslog</p>
 
-    <div class="seccion">
+    <div id="reloj"></div>
 
-        <h2>📋 Eventos Recientes</h2>
+</div>
 
-        <table>
+<div id="cards"></div>
 
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Hostname</th>
-                    <th>Facility</th>
-                    <th>Severidad</th>
-                    <th>Mensaje</th>
-                </tr>
-            </thead>
+<div id="cardsIncidents"></div>
 
-            <tbody id="tablaEventos">
+<div id="estadoGeneral"></div>
 
-            </tbody>
+<div class="seccion">
 
-        </table>
+    <div class="filtros">
+
+        <button onclick="filtrar('todos')">Todos</button>
+        <button onclick="filtrar('Critical')">Critical</button>
+        <button onclick="filtrar('Error')">Error</button>
+        <button onclick="filtrar('Warning')">Warning</button>
+        <button onclick="filtrar('Informational')">Informational</button>
 
     </div>
 
-    <div class="footer">
-        NOC Syslog Inteligente | MVP v0.2.0
-    </div>
+    <h2>📋 Eventos Recientes</h2>
 
-    <script>
+    <table>
 
-        fetch("http://127.0.0.1:8000/dashboard/resumen")
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Hostname</th>
+                <th>Facility</th>
+                <th>Severidad</th>
+                <th>Mensaje</th>
+                <th>Fecha</th>
+            </tr>
+        </thead>
 
-        .then(response => response.json())
+        <tbody id="tablaEventos"></tbody>
 
-        .then(data => {
+    </table>
 
-            document.getElementById("cards").innerHTML = `
+</div>
 
-            <div class="cards">
+<div class="seccion">
 
-                <div class="card total">
-                    <h3>Total Eventos</h3>
-                    <div class="numero">${data.total_eventos}</div>
-                </div>
+    <h2>📌 Incidentes Recientes</h2>
 
-                <div class="card criticos">
-                    <h3>Críticos</h3>
-                    <div class="numero">${data.criticos}</div>
-                </div>
+    <table>
 
-                <div class="card errores">
-                    <h3>Errores</h3>
-                    <div class="numero">${data.errores}</div>
-                </div>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Estado</th>
+                <th>Responsable</th>
+                <th>Creado</th>
+                <th>Cierre</th>
+            </tr>
+        </thead>
 
-                <div class="card advertencias">
-                    <h3>Advertencias</h3>
-                    <div class="numero">${data.advertencias}</div>
-                </div>
+        <tbody id="tablaIncidentes"></tbody>
 
-                <div class="card informativos">
-                    <h3>Informativos</h3>
-                    <div class="numero">${data.informativos}</div>
-                </div>
+    </table>
 
-            </div>
+</div>
 
-            `;
+<div class="footer">
 
-        });
+    NOC Syslog Inteligente | MVP v0.2.0
 
-        fetch("http://127.0.0.1:8000/syslog/clasificados")
+</div>
 
-        .then(response => response.json())
+<script>
 
-        .then(eventos => {
+let eventosGlobal = [];
 
-            let filas = "";
+setInterval(() => {
 
-            eventos.forEach(evento => {
+    document.getElementById(
+        "reloj"
+    ).innerHTML = new Date().toLocaleString();
 
-                let clase = "";
+}, 1000);
 
-                if(evento.nivel === "Critical"){
-                    clase = "critical";
-                }
-                else if(evento.nivel === "Error"){
-                    clase = "error";
-                }
-                else if(evento.nivel === "Warning"){
-                    clase = "warning";
-                }
-                else{
-                    clase = "informational";
-                }
+fetch("http://127.0.0.1:8000/dashboard/resumen")
 
-                filas += `
-                <tr>
-                    <td>${evento.id}</td>
-                    <td>${evento.hostname}</td>
-                    <td>${evento.facility}</td>
-                    <td class="${clase}">
-                        ${evento.nivel}
-                    </td>
-                    <td>${evento.mensaje}</td>
-                </tr>
-                `;
+.then(response => response.json())
 
-            });
+.then(data => {
 
-            document.getElementById("tablaEventos").innerHTML = filas;
+document.getElementById("cards").innerHTML = `
 
-        });
+<div class="cards">
 
-         fetch("http://127.0.0.1:8000/dashboard/incidents")
+<div class="card total">
+<h3>Total Eventos</h3>
+<div class="numero">${data.total_eventos}</div>
+</div>
 
-        .then(response => response.json())
+<div class="card criticos">
+<h3>Críticos</h3>
+<div class="numero">${data.criticos}</div>
+</div>
 
-        .then(data => {
+<div class="card errores">
+<h3>Errores</h3>
+<div class="numero">${data.errores}</div>
+</div>
 
-            document.getElementById("cardsIncidents").innerHTML = `
+<div class="card advertencias">
+<h3>Advertencias</h3>
+<div class="numero">${data.advertencias}</div>
+</div>
 
-            <div class="cards">
+<div class="card informativos">
+<h3>Informativos</h3>
+<div class="numero">${data.informativos}</div>
+</div>
 
-                 <div class="card incidentes">
-                 <h3>Total Incidentes</h3>
-                 <div class="numero">${data.total_incidentes}</div>
-                </div>
+</div>
 
-            <div class="card abiertos">
-                 <h3>Abiertos</h3>
-                 <div class="numero">${data.abiertos}</div>
-                </div>
+`;
 
-            <div class="card cerrados">
-                 <h3>Cerrados</h3>
-                 <div class="numero">${data.cerrados}</div>
-                </div>
+if(data.criticos > 0){
 
-            </div>
+document.getElementById("estadoGeneral").innerHTML = `
+<div class="estado-alerta">
+🔴 ATENCIÓN REQUERIDA
+</div>
+`;
 
-            `;
+}
+else{
 
-        });
+document.getElementById("estadoGeneral").innerHTML = `
+<div class="estado-ok">
+🟢 NOC OPERACIONAL
+</div>
+`;
 
-        
+}
 
-        
+});
 
-    </script>
+fetch("http://127.0.0.1:8000/dashboard/incidents")
+
+.then(response => response.json())
+
+.then(data => {
+
+document.getElementById("cardsIncidents").innerHTML = `
+
+<div class="cards">
+
+<div class="card incidentes">
+<h3>Total Incidentes</h3>
+<div class="numero">${data.total_incidentes}</div>
+</div>
+
+<div class="card abiertos">
+<h3>Abiertos</h3>
+<div class="numero">${data.abiertos}</div>
+</div>
+
+<div class="card cerrados">
+<h3>Cerrados</h3>
+<div class="numero">${data.cerrados}</div>
+</div>
+
+</div>
+
+`;
+
+});
+
+fetch("http://127.0.0.1:8000/syslog/clasificados")
+
+.then(response => response.json())
+
+.then(eventos => {
+
+eventosGlobal = eventos;
+
+filtrar("todos");
+
+});
+
+function filtrar(nivel){
+
+let filas = "";
+
+let datos = eventosGlobal;
+
+if(nivel !== "todos"){
+
+    datos = eventosGlobal.filter(
+        evento => evento.nivel === nivel
+    );
+
+}
+
+datos.forEach(evento => {
+
+let clase = "";
+
+if(evento.nivel === "Critical"){
+    clase = "critical";
+}
+else if(evento.nivel === "Error"){
+    clase = "error";
+}
+else if(evento.nivel === "Warning"){
+    clase = "warning";
+}
+else{
+    clase = "informational";
+}
+
+filas += `
+<tr>
+<td>${evento.id}</td>
+<td>${evento.hostname}</td>
+<td>${evento.facility}</td>
+<td class="${clase}">${evento.nivel}</td>
+<td>${evento.mensaje}</td>
+<td>${new Date(evento.fecha).toLocaleString()}</td>
+</tr>
+`;
+
+});
+
+document.getElementById(
+"tablaEventos"
+).innerHTML = filas;
+
+}
+
+fetch("http://127.0.0.1:8000/dashboard/incidents/list")
+
+.then(response => response.json())
+
+.then(incidentes => {
+
+let filas = "";
+
+incidentes.forEach(incidente => {
+
+filas += `
+<tr>
+<td>${incidente.id}</td>
+<td>${incidente.titulo}</td>
+<td class="${
+incidente.estado === "Cerrado"
+? "estado-cerrado"
+: "estado-abierto"
+}">
+${incidente.estado}
+</td>
+<td>${incidente.responsable}</td>
+<td>${new Date(incidente.fecha_creacion).toLocaleString()}</td>
+<td>${
+incidente.fecha_cierre
+? new Date(incidente.fecha_cierre).toLocaleString()
+: "-"
+}</td>
+</tr>
+`;
+
+});
+
+document.getElementById(
+"tablaIncidentes"
+).innerHTML = filas;
+
+});
+
+</script>
 
 </body>
-
 </html>

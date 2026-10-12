@@ -391,3 +391,62 @@ def resumen_incidentes(
         "abiertos": abiertos,
         "cerrados": cerrados
     }
+
+@app.get("/generator/syslog/{vendor}/{ip}")
+def generar_syslog(
+    vendor: str,
+    ip: str
+):
+    vendor = vendor.lower()
+    if vendor == "cisco":
+
+        return {
+            "vendor": "Cisco",
+            "config": f"""
+logging host {ip}
+logging trap informational
+"""
+        }
+    elif vendor == "fortinet":
+
+        return {
+            "vendor": "Fortinet",
+            "config": f"""
+config log syslogd setting
+set status enable
+set server "{ip}"
+end
+"""
+        }
+    elif vendor == "huawei":
+
+        return {
+            "vendor": "Huawei",
+            "config": f"""
+info-center loghost {ip}
+info-center enable
+"""
+        }
+    else:
+
+        return {
+            "error": "Fabricante no soportado"
+        }    
+    
+@app.get("/dashboard/incidents/list")
+def listar_incidentes_dashboard(
+    db: Session = Depends(get_db)
+):
+
+    return db.query(
+        Incident
+    ).all()
+
+@app.get("/health")
+def health():
+
+    return {
+        "status": "UP",
+        "database": "UP",
+        "api": "UP"
+    }
