@@ -13,6 +13,9 @@ from app.schemas import DeviceCreate
 
 from app.schemas import DeviceUpdate
 
+from app.schemas import SyslogEventCreate
+from app.models import SyslogEvent
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -29,6 +32,24 @@ def get_db():
 
     finally:
         db.close()
+
+def obtener_nombre_severidad(severity):
+
+    severidades = {
+        0: "Emergency",
+        1: "Alert",
+        2: "Critical",
+        3: "Error",
+        4: "Warning",
+        5: "Notice",
+        6: "Informational",
+        7: "Debug"
+    }
+
+    return severidades.get(
+        severity,
+        "Desconocida"
+    )
 
 @app.get("/")
 def inicio():
@@ -136,3 +157,56 @@ def eliminar_dispositivo(
     return {
         "mensaje": "Dispositivo eliminado correctamente"
     }
+
+@app.post("/syslog")
+def crear_evento_syslog(
+    evento: SyslogEventCreate,
+    db: Session = Depends(get_db)
+):
+
+    nuevo_evento = SyslogEvent(
+        hostname=evento.hostname,
+        facility=evento.facility,
+        severity=evento.severity,
+        mensaje=evento.mensaje
+    )
+
+    db.add(nuevo_evento)
+    db.commit()
+    db.refresh(nuevo_evento)
+
+    return nuevo_evento
+
+@app.get("/syslog")
+def listar_eventos_syslog(
+    db: Session = Depends(get_db)
+):
+
+    eventos = db.query(SyslogEvent).all()
+
+    return eventos
+
+@app.get("/syslog/clasificados")
+def listar_syslog_clasificados(
+    db: Session = Depends(get_db)
+):
+
+    eventos = db.query(SyslogEvent).all()
+
+    resultado = []
+
+    for evento in eventos:
+
+        resultado.append({
+            "id": evento.id,
+            "hostname": evento.hostname,
+            "facility": evento.facility,
+            "severity": evento.severity,
+            "nivel": obtener_nombre_severidad(
+                evento.severity
+            ),
+            "mensaje": evento.mensaje,
+            "fecha": evento.fecha
+        })
+
+    return resultado

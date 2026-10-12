@@ -20,3 +20,10 @@ class DeviceUpdate(BaseModel):
     version: str
     ubicacion: str
     estado: str
+
+class SyslogEventCreate(BaseModel):
+
+    hostname: str
+    facility: str
+    severity: int
+    mensaje: str

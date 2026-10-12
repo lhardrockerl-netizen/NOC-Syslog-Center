@@ -7,6 +7,8 @@ from datetime import datetime
 
 from .database import Base
 
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
 
 class Device(Base):
 
@@ -28,4 +30,22 @@ class Device(Base):
         DateTime,
         default=datetime.utcnow,
         onupdate=datetime.utcnow
+    )
+
+class SyslogEvent(Base):
+
+    __tablename__ = "syslog_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    hostname = Column(String)
+    facility = Column(String)
+
+    severity = Column(Integer)
+
+    mensaje = Column(String)
+
+    fecha = Column(
+        DateTime,
+        default=datetime.utcnow
     )
