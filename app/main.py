@@ -234,3 +234,34 @@ def filtrar_por_hostname(
     ).all()
 
     return eventos
+
+@app.get("/dashboard/resumen")
+def resumen_dashboard(
+    db: Session = Depends(get_db)
+):
+
+    total = db.query(SyslogEvent).count()
+
+    criticos = db.query(SyslogEvent).filter(
+        SyslogEvent.severity <= 2
+    ).count()
+
+    errores = db.query(SyslogEvent).filter(
+        SyslogEvent.severity == 3
+    ).count()
+
+    advertencias = db.query(SyslogEvent).filter(
+        SyslogEvent.severity == 4
+    ).count()
+
+    informativos = db.query(SyslogEvent).filter(
+        SyslogEvent.severity >= 5
+    ).count()
+
+    return {
+        "total_eventos": total,
+        "criticos": criticos,
+        "errores": errores,
+        "advertencias": advertencias,
+        "informativos": informativos
+    }
