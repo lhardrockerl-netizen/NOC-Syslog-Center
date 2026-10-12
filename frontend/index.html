@@ -230,7 +230,47 @@ tr:hover{
     font-size:14px;
 }
 
+.terminal-controls{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.terminal-controls input{
+    flex:1;
+    padding:12px;
+    border:1px solid #d1d5db;
+    border-radius:8px;
+}
+
+.terminal-controls button{
+    background:#2563eb;
+    color:white;
+    border:none;
+    border-radius:8px;
+    padding:12px 20px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.terminal-controls button:hover{
+    background:#1d4ed8;
+}
+
+#salidaTerminal{
+    background:#111827;
+    color:#00ff66;
+    padding:20px;
+    border-radius:10px;
+    min-height:250px;
+    font-family:Consolas, monospace;
+    white-space:pre-wrap;
+    overflow:auto;
+}
+
 </style>
+
+
 
 </head>
 
@@ -305,6 +345,38 @@ tr:hover{
         <tbody id="tablaIncidentes"></tbody>
 
     </table>
+
+</div>
+
+<div class="seccion">
+
+    <h2>💻 Consola NOC (Modo Lectura)</h2>
+
+    <div class="terminal-controls">
+
+        <input
+            type="text"
+            id="comando"
+            placeholder="Ejemplo: show version"
+        >
+
+        <button onclick="ejecutarComando()">
+            Ejecutar
+        </button>
+
+    </div>
+
+    <pre id="salidaTerminal">
+Bienvenido a la consola NOC
+
+Comandos disponibles:
+
+show version
+show ip interface brief
+show ip route
+show inventory
+show processes
+    </pre>
 
 </div>
 
@@ -517,6 +589,119 @@ document.getElementById(
 ).innerHTML = filas;
 
 });
+
+function ejecutarComando(){
+
+    let cmd = document
+        .getElementById("comando")
+        .value
+        .toLowerCase()
+        .trim();
+
+    let salida = "";
+
+    if(cmd === "show version"){
+
+        salida = `
+Cisco IOS XE 17.9.1
+
+Modelo: ISR 4331
+
+Uptime: 25 días
+
+Estado: Operacional
+`;
+
+    }
+
+    else if(cmd === "show ip interface brief"){
+
+        salida = `
+Interface                Estado
+--------------------------------
+GigabitEthernet0/0       up
+GigabitEthernet0/1       up
+GigabitEthernet0/2       down
+Loopback0                up
+`;
+
+    }
+
+    else if(cmd === "show ip route"){
+
+        salida = `
+Routing Table
+
+C 192.168.1.0/24
+O 10.10.10.0/24
+S* 0.0.0.0/0
+`;
+
+    }
+
+    else if(cmd === "show inventory"){
+
+        salida = `
+Inventario
+
+Router ISR4331
+Switch Catalyst 9300
+Firewall FortiGate 120G
+`;
+
+    }
+
+    else if(cmd === "show processes"){
+
+        salida = `
+PID     PROCESO              CPU
+
+100     Routing Engine       12%
+200     Syslog Service       5%
+300     Management           8%
+
+CPU Total: 25%
+`;
+
+    }
+
+    else if(
+        cmd === "reload" ||
+        cmd === "erase startup-config" ||
+        cmd === "format flash"
+    ){
+
+        salida = `
+ERROR
+
+Comando bloqueado.
+
+Esta consola opera únicamente en modo lectura.
+`;
+
+    }
+
+    else{
+
+        salida = `
+Comando no reconocido.
+
+Comandos disponibles:
+
+show version
+show ip interface brief
+show ip route
+show inventory
+show processes
+`;
+
+    }
+
+    document.getElementById(
+        "salidaTerminal"
+    ).textContent = salida;
+
+}
 
 </script>
 

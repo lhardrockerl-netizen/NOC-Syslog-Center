@@ -1,0 +1,7 @@
+LICENCIA DE USO ACADÉMICO
+
+Este proyecto ha sido desarrollado exclusivamente con fines académicos para la asignatura Administración y Gestión de Redes.
+
+Se permite su uso para actividades educativas y de aprendizaje.
+
+No se recomienda su utilización en entornos productivos.
