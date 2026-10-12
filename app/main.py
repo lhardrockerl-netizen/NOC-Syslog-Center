@@ -64,3 +64,21 @@ def listar_dispositivos(
     dispositivos = db.query(Device).all()
 
     return dispositivos
+
+@app.get("/devices/{device_id}")
+def obtener_dispositivo(
+    device_id: int,
+    db: Session = Depends(get_db)
+):
+
+    dispositivo = db.query(Device).filter(
+        Device.id == device_id
+    ).first()
+
+    if dispositivo is None:
+        return {
+            "error": "Dispositivo no encontrado"
+        }
+
+    return dispositivo
+
