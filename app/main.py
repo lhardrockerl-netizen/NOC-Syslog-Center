@@ -222,3 +222,15 @@ def filtrar_por_severidad(
     ).all()
 
     return eventos
+
+@app.get("/syslog/hostname/{hostname}")
+def filtrar_por_hostname(
+    hostname: str,
+    db: Session = Depends(get_db)
+):
+
+    eventos = db.query(SyslogEvent).filter(
+        SyslogEvent.hostname == hostname
+    ).all()
+
+    return eventos
