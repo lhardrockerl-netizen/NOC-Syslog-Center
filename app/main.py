@@ -11,6 +11,8 @@ from app.models import Device
 
 from app.schemas import DeviceCreate
 
+from app.schemas import DeviceUpdate
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -82,3 +84,32 @@ def obtener_dispositivo(
 
     return dispositivo
 
+@app.put("/devices/{device_id}")
+def actualizar_dispositivo(
+    device_id: int,
+    device: DeviceUpdate,
+    db: Session = Depends(get_db)
+):
+
+    dispositivo = db.query(Device).filter(
+        Device.id == device_id
+    ).first()
+
+    if dispositivo is None:
+
+        return {
+            "error": "Dispositivo no encontrado"
+        }
+
+    dispositivo.nombre = device.nombre
+    dispositivo.ip = device.ip
+    dispositivo.marca = device.marca
+    dispositivo.modelo = device.modelo
+    dispositivo.version = device.version
+    dispositivo.ubicacion = device.ubicacion
+    dispositivo.estado = device.estado
+
+    db.commit()
+    db.refresh(dispositivo)
+
+    return dispositivo

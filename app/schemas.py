@@ -10,3 +10,13 @@ class DeviceCreate(BaseModel):
     version: str
     ubicacion: str
     estado: str
+
+class DeviceUpdate(BaseModel):
+
+    nombre: str
+    ip: str
+    marca: str
+    modelo: str
+    version: str
+    ubicacion: str
+    estado: str
