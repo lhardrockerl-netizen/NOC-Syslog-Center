@@ -7,6 +7,7 @@
     <title>NOC Syslog Center</title>
 
     <style>
+        
 
         *{
             margin:0;
@@ -144,6 +145,20 @@
             font-size:14px;
         }
 
+        .incidentes{
+             background:#7c3aed;
+        }
+
+        .abiertos{
+             background:#dc2626;
+        }
+
+        .cerrados{
+             background:#16a34a;
+        }
+
+        
+
     </style>
 
 </head>
@@ -156,6 +171,8 @@
     </div>
 
     <div id="cards"></div>
+
+    <div id="cardsIncidents"></div>
 
     <div class="seccion">
 
@@ -270,6 +287,41 @@
             document.getElementById("tablaEventos").innerHTML = filas;
 
         });
+
+         fetch("http://127.0.0.1:8000/dashboard/incidents")
+
+        .then(response => response.json())
+
+        .then(data => {
+
+            document.getElementById("cardsIncidents").innerHTML = `
+
+            <div class="cards">
+
+                 <div class="card incidentes">
+                 <h3>Total Incidentes</h3>
+                 <div class="numero">${data.total_incidentes}</div>
+                </div>
+
+            <div class="card abiertos">
+                 <h3>Abiertos</h3>
+                 <div class="numero">${data.abiertos}</div>
+                </div>
+
+            <div class="card cerrados">
+                 <h3>Cerrados</h3>
+                 <div class="numero">${data.cerrados}</div>
+                </div>
+
+            </div>
+
+            `;
+
+        });
+
+        
+
+        
 
     </script>
 

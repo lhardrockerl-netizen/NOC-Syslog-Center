@@ -18,6 +18,13 @@ from app.models import SyslogEvent
 
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.models import Incident
+from app.schemas import IncidentCreate
+
+from app.schemas import IncidentUpdate
+
+from datetime import datetime
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -274,4 +281,113 @@ def resumen_dashboard(
         "errores": errores,
         "advertencias": advertencias,
         "informativos": informativos
+    }
+
+@app.post("/incidents")
+def crear_incidente(
+    incidente: IncidentCreate,
+    db: Session = Depends(get_db)
+):
+
+    nuevo_incidente = Incident(
+
+        titulo=incidente.titulo,
+        descripcion=incidente.descripcion,
+        estado=incidente.estado,
+        responsable=incidente.responsable
+
+    )
+
+    db.add(nuevo_incidente)
+
+    db.commit()
+
+    db.refresh(nuevo_incidente)
+
+    return nuevo_incidente
+
+@app.get("/incidents")
+def listar_incidentes(
+    db: Session = Depends(get_db)
+):
+
+    incidentes = db.query(
+        Incident
+    ).all()
+
+    return incidentes
+
+@app.get("/dashboard/incidents")
+def resumen_incidentes(
+    db: Session = Depends(get_db)
+):
+
+    total = db.query(Incident).count()
+
+    abiertos = db.query(Incident).filter(
+        Incident.estado == "Abierto"
+    ).count()
+
+    cerrados = db.query(Incident).filter(
+        Incident.estado == "Cerrado"
+    ).count()
+
+    return {
+        "total_incidentes": total,
+        "abiertos": abiertos,
+        "cerrados": cerrados
+    }
+
+@app.put("/incidents/{incident_id}")
+def actualizar_incidente(
+    incident_id: int,
+    incidente: IncidentUpdate,
+    db: Session = Depends(get_db)
+):
+
+    incidente_db = db.query(
+        Incident
+    ).filter(
+        Incident.id == incident_id
+    ).first()
+
+    if incidente_db is None:
+
+        return {
+            "error": "Incidente no encontrado"
+        }
+
+    incidente_db.estado = incidente.estado
+
+    if incidente.estado == "Cerrado":
+
+        incidente_db.fecha_cierre = datetime.utcnow()
+
+    db.commit()
+
+    db.refresh(
+        incidente_db
+    )
+
+    return incidente_db
+
+@app.get("/dashboard/incidents")
+def resumen_incidentes(
+    db: Session = Depends(get_db)
+):
+
+    total = db.query(Incident).count()
+
+    abiertos = db.query(Incident).filter(
+        Incident.estado == "Abierto"
+    ).count()
+
+    cerrados = db.query(Incident).filter(
+        Incident.estado == "Cerrado"
+    ).count()
+
+    return {
+        "total_incidentes": total,
+        "abiertos": abiertos,
+        "cerrados": cerrados
     }

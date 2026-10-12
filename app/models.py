@@ -49,3 +49,27 @@ class SyslogEvent(Base):
         DateTime,
         default=datetime.utcnow
     )
+
+class Incident(Base):
+
+    __tablename__ = "incidents"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    titulo = Column(String)
+
+    descripcion = Column(String)
+
+    estado = Column(String)
+
+    responsable = Column(String)
+
+    fecha_creacion = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    fecha_cierre = Column(
+        DateTime,
+        nullable=True
+    )
