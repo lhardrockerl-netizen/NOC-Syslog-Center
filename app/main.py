@@ -113,3 +113,26 @@ def actualizar_dispositivo(
     db.refresh(dispositivo)
 
     return dispositivo
+
+@app.delete("/devices/{device_id}")
+def eliminar_dispositivo(
+    device_id: int,
+    db: Session = Depends(get_db)
+):
+
+    dispositivo = db.query(Device).filter(
+        Device.id == device_id
+    ).first()
+
+    if dispositivo is None:
+
+        return {
+            "error": "Dispositivo no encontrado"
+        }
+
+    db.delete(dispositivo)
+    db.commit()
+
+    return {
+        "mensaje": "Dispositivo eliminado correctamente"
+    }
