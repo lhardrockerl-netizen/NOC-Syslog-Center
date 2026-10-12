@@ -16,11 +16,21 @@ from app.schemas import DeviceUpdate
 from app.schemas import SyslogEventCreate
 from app.models import SyslogEvent
 
+from fastapi.middleware.cors import CORSMiddleware
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="NOC Syslog Center",
     version="0.2.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 def get_db():

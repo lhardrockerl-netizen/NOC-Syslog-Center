@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>NOC Syslog Center</title>
+
+</head>
+
+<body>
+
+    <h1>NOC Syslog Center</h1>
+
+    <h2>Resumen de Eventos</h2>
+
+    <div id="dashboard">
+
+        Cargando información...
+
+    </div>
+
+    <script>
+
+        fetch("http://127.0.0.1:8000/dashboard/resumen")
+
+        .then(response => response.json())
+
+        .then(data => {
+
+            document.getElementById("dashboard").innerHTML = `
+                <p>Total eventos: ${data.total_eventos}</p>
+                <p>Críticos: ${data.criticos}</p>
+                <p>Errores: ${data.errores}</p>
+                <p>Advertencias: ${data.advertencias}</p>
+                <p>Informativos: ${data.informativos}</p>
+            `;
+
+        });
+
+    </script>
+
+</body>
+
+</html>
