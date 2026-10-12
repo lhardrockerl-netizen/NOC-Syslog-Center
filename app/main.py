@@ -1,0 +1,66 @@
+from fastapi import FastAPI
+from fastapi import Depends
+
+from sqlalchemy.orm import Session
+
+from app.database import engine
+from app.database import SessionLocal
+
+from app.models import Base
+from app.models import Device
+
+from app.schemas import DeviceCreate
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(
+    title="NOC Syslog Center",
+    version="0.2.0"
+)
+
+def get_db():
+
+    db = SessionLocal()
+
+    try:
+        yield db
+
+    finally:
+        db.close()
+
+@app.get("/")
+def inicio():
+    return {
+        "mensaje": "NOC Syslog Center funcionando"
+    }
+
+@app.post("/devices")
+def crear_dispositivo(
+    device: DeviceCreate,
+    db: Session = Depends(get_db)
+):
+
+    nuevo_dispositivo = Device(
+        nombre=device.nombre,
+        ip=device.ip,
+        marca=device.marca,
+        modelo=device.modelo,
+        version=device.version,
+        ubicacion=device.ubicacion,
+        estado=device.estado
+    )
+
+    db.add(nuevo_dispositivo)
+    db.commit()
+    db.refresh(nuevo_dispositivo)
+
+    return nuevo_dispositivo
+
+@app.get("/devices")
+def listar_dispositivos(
+    db: Session = Depends(get_db)
+):
+
+    dispositivos = db.query(Device).all()
+
+    return dispositivos
