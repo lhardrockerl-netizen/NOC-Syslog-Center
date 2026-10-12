@@ -210,3 +210,15 @@ def listar_syslog_clasificados(
         })
 
     return resultado
+
+@app.get("/syslog/severity/{nivel}")
+def filtrar_por_severidad(
+    nivel: int,
+    db: Session = Depends(get_db)
+):
+
+    eventos = db.query(SyslogEvent).filter(
+        SyslogEvent.severity == nivel
+    ).all()
+
+    return eventos
