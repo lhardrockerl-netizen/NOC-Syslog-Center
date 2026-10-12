@@ -2,23 +2,187 @@
 <html lang="es">
 
 <head>
-
     <meta charset="UTF-8">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NOC Syslog Center</title>
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+        }
+
+        body{
+            font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background:#f4f6f9;
+            color:#333;
+            padding:30px;
+        }
+
+        .header{
+            text-align:center;
+            margin-bottom:40px;
+        }
+
+        .header h1{
+            color:#1f2937;
+            font-size:36px;
+            margin-bottom:10px;
+        }
+
+        .header p{
+            color:#6b7280;
+        }
+
+        .cards{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+            gap:20px;
+            margin-bottom:40px;
+        }
+
+        .card{
+            border-radius:15px;
+            padding:25px;
+            color:white;
+            box-shadow:0 4px 12px rgba(0,0,0,.15);
+            transition:0.3s;
+        }
+
+        .card:hover{
+            transform:translateY(-5px);
+        }
+
+        .card h3{
+            margin-bottom:10px;
+            font-size:18px;
+        }
+
+        .numero{
+            font-size:48px;
+            font-weight:bold;
+        }
+
+        .total{
+            background:#2563eb;
+        }
+
+        .criticos{
+            background:#dc2626;
+        }
+
+        .errores{
+            background:#ea580c;
+        }
+
+        .advertencias{
+            background:#ca8a04;
+        }
+
+        .informativos{
+            background:#16a34a;
+        }
+
+        .seccion{
+            background:white;
+            border-radius:15px;
+            padding:25px;
+            box-shadow:0 4px 12px rgba(0,0,0,.08);
+        }
+
+        .seccion h2{
+            margin-bottom:20px;
+            color:#1f2937;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+        }
+
+        th{
+            background:#1f2937;
+            color:white;
+            padding:12px;
+        }
+
+        td{
+            padding:12px;
+            border-bottom:1px solid #e5e7eb;
+        }
+
+        tr:hover{
+            background:#f9fafb;
+        }
+
+        .critical{
+            color:#dc2626;
+            font-weight:bold;
+        }
+
+        .error{
+            color:#ea580c;
+            font-weight:bold;
+        }
+
+        .warning{
+            color:#ca8a04;
+            font-weight:bold;
+        }
+
+        .informational{
+            color:#16a34a;
+            font-weight:bold;
+        }
+
+        .footer{
+            text-align:center;
+            margin-top:30px;
+            color:#6b7280;
+            font-size:14px;
+        }
+
+    </style>
 
 </head>
 
 <body>
 
-    <h1>NOC Syslog Center</h1>
+    <div class="header">
+        <h1>🚀 NOC Syslog Center</h1>
+        <p>Dashboard de monitoreo y clasificación de eventos Syslog</p>
+    </div>
 
-    <h2>Resumen de Eventos</h2>
+    <div id="cards"></div>
 
-    <div id="dashboard">
+    <div class="seccion">
 
-        Cargando información...
+        <h2>📋 Eventos Recientes</h2>
 
+        <table>
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Hostname</th>
+                    <th>Facility</th>
+                    <th>Severidad</th>
+                    <th>Mensaje</th>
+                </tr>
+            </thead>
+
+            <tbody id="tablaEventos">
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <div class="footer">
+        NOC Syslog Inteligente | MVP v0.2.0
     </div>
 
     <script>
@@ -29,13 +193,81 @@
 
         .then(data => {
 
-            document.getElementById("dashboard").innerHTML = `
-                <p>Total eventos: ${data.total_eventos}</p>
-                <p>Críticos: ${data.criticos}</p>
-                <p>Errores: ${data.errores}</p>
-                <p>Advertencias: ${data.advertencias}</p>
-                <p>Informativos: ${data.informativos}</p>
+            document.getElementById("cards").innerHTML = `
+
+            <div class="cards">
+
+                <div class="card total">
+                    <h3>Total Eventos</h3>
+                    <div class="numero">${data.total_eventos}</div>
+                </div>
+
+                <div class="card criticos">
+                    <h3>Críticos</h3>
+                    <div class="numero">${data.criticos}</div>
+                </div>
+
+                <div class="card errores">
+                    <h3>Errores</h3>
+                    <div class="numero">${data.errores}</div>
+                </div>
+
+                <div class="card advertencias">
+                    <h3>Advertencias</h3>
+                    <div class="numero">${data.advertencias}</div>
+                </div>
+
+                <div class="card informativos">
+                    <h3>Informativos</h3>
+                    <div class="numero">${data.informativos}</div>
+                </div>
+
+            </div>
+
             `;
+
+        });
+
+        fetch("http://127.0.0.1:8000/syslog/clasificados")
+
+        .then(response => response.json())
+
+        .then(eventos => {
+
+            let filas = "";
+
+            eventos.forEach(evento => {
+
+                let clase = "";
+
+                if(evento.nivel === "Critical"){
+                    clase = "critical";
+                }
+                else if(evento.nivel === "Error"){
+                    clase = "error";
+                }
+                else if(evento.nivel === "Warning"){
+                    clase = "warning";
+                }
+                else{
+                    clase = "informational";
+                }
+
+                filas += `
+                <tr>
+                    <td>${evento.id}</td>
+                    <td>${evento.hostname}</td>
+                    <td>${evento.facility}</td>
+                    <td class="${clase}">
+                        ${evento.nivel}
+                    </td>
+                    <td>${evento.mensaje}</td>
+                </tr>
+                `;
+
+            });
+
+            document.getElementById("tablaEventos").innerHTML = filas;
 
         });
 
