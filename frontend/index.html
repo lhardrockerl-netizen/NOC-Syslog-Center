@@ -350,6 +350,31 @@ tr:hover{
 
 <div class="seccion">
 
+    <h2>🖥️ Dispositivos Registrados</h2>
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>IP</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Estado</th>
+                <th>Ubicación</th>
+                <th>Actualizado</th>
+            </tr>
+        </thead>
+
+        <tbody id="tablaDevices"></tbody>
+
+    </table>
+
+</div>
+
+<div class="seccion">
+
     <h2>💻 Consola NOC (Modo Lectura)</h2>
 
     <div class="terminal-controls">
@@ -702,6 +727,44 @@ show processes
     ).textContent = salida;
 
 }
+
+fetch("http://127.0.0.1:8000/dashboard/devices")
+
+.then(response => response.json())
+
+.then(devices => {
+
+    let filas = "";
+
+    devices.forEach(device => {
+
+        filas += `
+        <tr>
+            <td>${device.id}</td>
+            <td>${device.nombre}</td>
+            <td>${device.ip}</td>
+            <td>${device.marca}</td>
+            <td>${device.modelo}</td>
+            <td>${device.estado}</td>
+            <td>${device.ubicacion}</td>
+            <td>${new Date(device.fecha_actualizacion).toLocaleString()}</td>
+        </tr>
+        `;
+
+    });
+
+    document.getElementById("tablaDevices").innerHTML = filas;
+
+})
+
+.catch(error => {
+
+    console.error(
+        "Error cargando dispositivos:",
+        error
+    );
+
+});
 
 </script>
 

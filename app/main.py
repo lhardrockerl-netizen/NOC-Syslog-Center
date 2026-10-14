@@ -450,3 +450,7 @@ def health():
         "database": "UP",
         "api": "UP"
     }
+
+@app.get("/dashboard/devices")
+def dashboard_devices(db: Session = Depends(get_db)):
+    return db.query(Device).all()
