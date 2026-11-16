@@ -24,8 +24,14 @@ from app.schemas import IncidentCreate
 from app.schemas import IncidentUpdate
 
 from datetime import datetime
+from app.device_sync import sync_device_name, sync_latest_device_names
+from app.alert_rules import classify_event
 
 Base.metadata.create_all(bind=engine)
+
+with SessionLocal() as initial_db:
+    sync_latest_device_names(initial_db)
+    initial_db.commit()
 
 app = FastAPI(
     title="NOC Syslog Center",
@@ -181,6 +187,8 @@ def crear_evento_syslog(
     db: Session = Depends(get_db)
 ):
 
+    sync_device_name(db, evento.mensaje)
+
     nuevo_evento = SyslogEvent(
         hostname=evento.hostname,
         facility=evento.facility,
@@ -214,13 +222,14 @@ def listar_syslog_clasificados(
 
     for evento in eventos:
 
+        clasificacion = classify_event({"hostname": evento.hostname, "severity": evento.severity, "mensaje": evento.mensaje})
         resultado.append({
             "id": evento.id,
             "hostname": evento.hostname,
             "facility": evento.facility,
-            "severity": evento.severity,
+            **clasificacion,
             "nivel": obtener_nombre_severidad(
-                evento.severity
+                clasificacion["severity"]
             ),
             "mensaje": evento.mensaje,
             "fecha": evento.fecha
@@ -257,23 +266,13 @@ def resumen_dashboard(
     db: Session = Depends(get_db)
 ):
 
-    total = db.query(SyslogEvent).count()
-
-    criticos = db.query(SyslogEvent).filter(
-        SyslogEvent.severity <= 2
-    ).count()
-
-    errores = db.query(SyslogEvent).filter(
-        SyslogEvent.severity == 3
-    ).count()
-
-    advertencias = db.query(SyslogEvent).filter(
-        SyslogEvent.severity == 4
-    ).count()
-
-    informativos = db.query(SyslogEvent).filter(
-        SyslogEvent.severity >= 5
-    ).count()
+    eventos = db.query(SyslogEvent).all()
+    niveles = [classify_event({"hostname": evento.hostname, "severity": evento.severity, "mensaje": evento.mensaje})["severity"] for evento in eventos]
+    total = len(niveles)
+    criticos = sum(nivel <= 2 for nivel in niveles)
+    errores = niveles.count(3)
+    advertencias = niveles.count(4)
+    informativos = sum(nivel >= 5 for nivel in niveles)
 
     return {
         "total_eventos": total,
@@ -454,3 +453,4 @@ def health():
 @app.get("/dashboard/devices")
 def dashboard_devices(db: Session = Depends(get_db)):
     return db.query(Device).all()
+

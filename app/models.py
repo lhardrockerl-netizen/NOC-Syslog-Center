@@ -73,3 +73,10 @@ class Incident(Base):
         DateTime,
         nullable=True
     )
+
+
+class DeviceIdentity(Base):
+    __tablename__ = "device_identities"
+
+    serial = Column(String, primary_key=True)
+    device_id = Column(Integer, ForeignKey("devices.id"), nullable=False, unique=True)

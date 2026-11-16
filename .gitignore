@@ -2,3 +2,7 @@ venv/
 __pycache__/ 
 *.pyc 
 noc.db 
+.telegram.json
+.telegram.json.tmp
+.telegram-state.json
+.telegram-state.json.tmp

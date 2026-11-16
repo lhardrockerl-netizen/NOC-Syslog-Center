@@ -296,7 +296,10 @@ tr:hover{
 
     <div class="filtros">
 
-        <button onclick="filtrar('todos')">Todos</button>
+        <button id="modoImportantes" onclick="cambiarVistaEventos('importantes')" aria-pressed="true">Solo importantes</button>
+        <button id="modoTodos" onclick="cambiarVistaEventos('todos')" aria-pressed="false">Ver todos</button>
+        <span style="margin:0 8px">Severidad:</span>
+        <button onclick="filtrar('todos')">Todas</button>
         <button onclick="filtrar('Critical')">Critical</button>
         <button onclick="filtrar('Error')">Error</button>
         <button onclick="filtrar('Warning')">Warning</button>
@@ -305,6 +308,7 @@ tr:hover{
     </div>
 
     <h2>📋 Eventos Recientes</h2>
+    <p id="resumenFiltroEventos" role="status"></p>
 
     <table>
 
@@ -414,6 +418,8 @@ show processes
 <script>
 
 let eventosGlobal = [];
+let modoEventos = "importantes";
+let severidadEventos = "todos";
 
 setInterval(() => {
 
@@ -433,27 +439,27 @@ document.getElementById("cards").innerHTML = `
 
 <div class="cards">
 
-<div class="card total">
+<div class="card total" role="button" tabindex="0" onclick="seleccionarTarjeta('todos')" onkeydown="activarTarjeta(event, 'todos')" style="cursor:pointer">
 <h3>Total Eventos</h3>
 <div class="numero">${data.total_eventos}</div>
 </div>
 
-<div class="card criticos">
+<div class="card criticos" role="button" tabindex="0" onclick="seleccionarTarjeta('grupo-criticos')" onkeydown="activarTarjeta(event, 'grupo-criticos')" style="cursor:pointer" title="Emergencias, alertas y criticos (severidad 0 a 2)">
 <h3>Críticos</h3>
 <div class="numero">${data.criticos}</div>
 </div>
 
-<div class="card errores">
+<div class="card errores" role="button" tabindex="0" onclick="seleccionarTarjeta('Error')" onkeydown="activarTarjeta(event, 'Error')" style="cursor:pointer">
 <h3>Errores</h3>
 <div class="numero">${data.errores}</div>
 </div>
 
-<div class="card advertencias">
+<div class="card advertencias" role="button" tabindex="0" onclick="seleccionarTarjeta('Warning')" onkeydown="activarTarjeta(event, 'Warning')" style="cursor:pointer">
 <h3>Advertencias</h3>
 <div class="numero">${data.advertencias}</div>
 </div>
 
-<div class="card informativos">
+<div class="card informativos" role="button" tabindex="0" onclick="seleccionarTarjeta('grupo-informativos')" onkeydown="activarTarjeta(event, 'grupo-informativos')" style="cursor:pointer" title="Notice, Informational y Debug (severidad 5 a 7)">
 <h3>Informativos</h3>
 <div class="numero">${data.informativos}</div>
 </div>
@@ -514,33 +520,137 @@ document.getElementById("cardsIncidents").innerHTML = `
 
 });
 
-fetch("http://127.0.0.1:8000/syslog/clasificados")
+// La actualizacion periodica carga tambien los eventos y respeta el filtro.
 
-.then(response => response.json())
+// Presentacion: conserva el mensaje original en la base de datos.
+function escaparTexto(valor) {
+    return String(valor ?? "").replace(/[&<>"']/g, caracter => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[caracter]);
+}
 
-.then(eventos => {
+function presentarEvento(evento) {
+    const original = String(evento.mensaje ?? "");
+    const campos = {};
+    const patron = /\b([a-zA-Z_][\w.-]*)=(?:"((?:\\.|[^"\\])*)"|([^\s]+))/g;
+    for (const coincidencia of original.matchAll(patron)) {
+        campos[coincidencia[1]] = coincidencia[2] !== undefined
+            ? coincidencia[2].replace(/\\(["\\])/g, "$1") : coincidencia[3];
+    }
+    const categorias = {
+        system: "Sistema", security: "Seguridad", routing: "Enrutamiento",
+        "security-rating": "Evaluacion de seguridad", user: "Usuarios",
+        vpn: "VPN", router: "Enrutamiento", ha: "Alta disponibilidad",
+        traffic: "Trafico", forward: "Trafico reenviado", local: "Trafico local",
+        anomaly: "Anomalias", virus: "Antivirus", webfilter: "Filtro web",
+        ips: "Prevencion de intrusiones", dns: "DNS", event: "Eventos"
+    };
+    const traducciones = {
+        "Security rating check completed.": "Revision de seguridad completada",
+        "Automatic configuration backup to flash disk succeeded": "Copia automatica de configuracion completada",
+        "Administrator admin logged out from console": "El administrador admin cerro sesion en consola",
+        "Configuration is changed in the admin session": "Configuracion modificada en una sesion administrativa"
+    };
+    // Solo aplica la categoria de FortiGate si se identifica su estructura.
+    const esFortigate = Boolean(campos.devname && campos.type);
+    const categoria = esFortigate ? (campos.subtype || campos.type) : "";
+    const facilityReal = String(evento.facility ?? "");
+    const facility = categoria
+        ? `${categorias[categoria] || categoria} · ${facilityReal}`
+        : (categorias[facilityReal] || facilityReal);
+    const texto = campos.msg || campos.logdesc || original;
+    let mensaje = traducciones[texto] || texto;
+    if (esFortigate && campos.user) {
+        mensaje += ` · Usuario: ${campos.user}`;
+    }
+    if (esFortigate && campos.result) {
+        const resultado = {fail: "fallido", pass: "correcto", success: "correcto"};
+        mensaje += ` · Resultado: ${resultado[campos.result] || campos.result}`;
+    }
+    if (esFortigate && campos.type === "traffic" && !campos.msg) {
+        const accion = {accept: "permitido", deny: "bloqueado", close: "finalizado"};
+        const origen = campos.srcip || "?";
+        const destino = campos.dstip || "?";
+        mensaje = `Trafico ${accion[campos.action] || campos.action || "registrado"}: ${origen} → ${destino}${campos.dstport ? ":" + campos.dstport : ""}${campos.service ? " · " + campos.service : ""}`;
+    }
+    if (evento.mensaje_noc) mensaje = evento.mensaje_noc;
+    return {facility, mensaje, original, campos, tieneDetalle: mensaje !== original};
+}
 
-eventosGlobal = eventos;
+function esEventoImportante(evento) {
+    const severidad = Number(evento.severity);
+    if (evento.severity !== null && evento.severity !== undefined &&
+        Number.isInteger(severidad) && severidad >= 0 && severidad <= 4) return true;
+    const c = presentarEvento(evento).campos;
+    const accion = String(c.action || "").toLowerCase();
+    const estado = String(c.status || c.result || "").toLowerCase();
+    if (["fail", "failed", "failure", "error", "deny", "denied", "blocked"].includes(estado) ||
+        ["deny", "denied", "block", "blocked"].includes(accion)) return true;
+    const descripcion = [c.logdesc, c.msg, c.action].filter(Boolean).join(" ");
+    // Mantener auditoria administrativa aunque llegue con nivel notice/information.
+    if (/admin.*(?:login|logout)|(?:login|logout).*admin|configuration (?:changed|is changed)|config(?:uration)? (?:change|changed)|login fail|authentication fail/i.test(descripcion)) return true;
+    if (c.user && ["login", "logout"].includes(accion)) return true;
+    if (["perf-stats", "backup"].includes(accion) ||
+        /performance statistics|configuration backed up|automatic configuration backup/i.test(descripcion)) return false;
+    if (c.type === "traffic" && c.subtype === "local" &&
+        (String(c.service).toUpperCase() === "SYSLOG" || c.dstport === "514")) return false;
+    // Conservar detecciones de seguridad; omitir trafico permitido rutinario.
+    return c.type === "utm" || ["virus", "ips", "anomaly"].includes(c.subtype);
+}
 
-filtrar("todos");
+function cambiarVistaEventos(modo) {
+    modoEventos = modo;
+    filtrar(severidadEventos);
+}
 
-});
+function seleccionarTarjeta(grupo) {
+    // Las tarjetas representan el total guardado, incluidos los eventos rutinarios.
+    modoEventos = "todos";
+    filtrar(grupo);
+    document.getElementById("resumenFiltroEventos").scrollIntoView({behavior: "smooth", block: "center"});
+}
+
+function activarTarjeta(evento, grupo) {
+    if (evento.key === "Enter" || evento.key === " ") {
+        evento.preventDefault();
+        seleccionarTarjeta(grupo);
+    }
+}
+
+function coincideSeveridad(evento, nivel) {
+    const numero = Number(evento.severity);
+    if (nivel === "grupo-criticos") return numero >= 0 && numero <= 2;
+    if (nivel === "grupo-informativos") return numero >= 5 && numero <= 7;
+    return nivel === "todos" || evento.nivel === nivel;
+}
 
 function filtrar(nivel){
+
+severidadEventos = nivel;
 
 let filas = "";
 
 let datos = eventosGlobal;
 
+if (modoEventos === "importantes") datos = datos.filter(esEventoImportante);
+
 if(nivel !== "todos"){
 
-    datos = eventosGlobal.filter(
-        evento => evento.nivel === nivel
+    datos = datos.filter(
+        evento => coincideSeveridad(evento, nivel)
     );
 
 }
 
+datos = [...datos].sort((a, b) => Number(b.id) - Number(a.id));
+document.getElementById("modoImportantes").setAttribute("aria-pressed", String(modoEventos === "importantes"));
+document.getElementById("modoTodos").setAttribute("aria-pressed", String(modoEventos === "todos"));
+document.getElementById("resumenFiltroEventos").textContent =
+    `${modoEventos === "importantes" ? "Solo importantes" : "Todos los eventos"} · Filtro: ${{todos: "Todas las severidades", "grupo-criticos": "Criticos (Emergencias, Alertas y Critical)", "grupo-informativos": "Informativos (Notice, Informational y Debug)", Critical: "Critical", Error: "Errores", Warning: "Advertencias", Informational: "Informational"}[nivel] || nivel} · ${datos.length} de ${eventosGlobal.length} registros · Mas recientes primero. Los contadores superiores incluyen todos los registros guardados.`;
+
 datos.forEach(evento => {
+
+const vista = presentarEvento(evento);
 
 let clase = "";
 
@@ -559,11 +669,11 @@ else{
 
 filas += `
 <tr>
-<td>${evento.id}</td>
-<td>${evento.hostname}</td>
-<td>${evento.facility}</td>
-<td class="${clase}">${evento.nivel}</td>
-<td>${evento.mensaje}</td>
+<td>${escaparTexto(evento.id)}</td>
+<td>${escaparTexto(evento.hostname)}</td>
+<td>${escaparTexto(vista.facility)}</td>
+<td class="${clase}">${escaparTexto(evento.nivel)}${evento.regla_noc ? `<br><small title="${escaparTexto(evento.regla_noc)}">Regla NOC · Original: ${escaparTexto(evento.severity_original)}</small>` : ""}</td>
+<td>${escaparTexto(vista.mensaje)}${vista.tieneDetalle ? `<details style="margin-top:6px"><summary>Ver registro original</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere;max-width:600px">${escaparTexto(vista.original)}</pre></details>` : ""}</td>
 <td>${new Date(evento.fecha).toLocaleString()}</td>
 </tr>
 `;
@@ -572,7 +682,7 @@ filas += `
 
 document.getElementById(
 "tablaEventos"
-).innerHTML = filas;
+).innerHTML = filas || '<tr><td colspan="6">No hay eventos para este filtro. Puedes seleccionar Ver todos.</td></tr>';
 
 }
 
@@ -728,43 +838,51 @@ show processes
 
 }
 
-fetch("http://127.0.0.1:8000/dashboard/devices")
-
-.then(response => response.json())
-
-.then(devices => {
-
-    let filas = "";
-
-    devices.forEach(device => {
-
-        filas += `
+let actualizandoDashboard = false;
+async function actualizarDashboard() {
+    if (actualizandoDashboard) return;
+    actualizandoDashboard = true;
+    try {
+        const endpoints = ["/dashboard/devices", "/syslog/clasificados", "/dashboard/resumen"];
+        const [devices, eventos, resumen] = await Promise.all(endpoints.map(async endpoint => {
+            const respuesta = await fetch("http://127.0.0.1:8000" + endpoint, {cache: "no-store", signal: AbortSignal.timeout(8000)});
+            if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+            return respuesta.json();
+        }));
+        const filas = devices.map(device => `
         <tr>
-            <td>${device.id}</td>
-            <td>${device.nombre}</td>
-            <td>${device.ip}</td>
-            <td>${device.marca}</td>
-            <td>${device.modelo}</td>
-            <td>${device.estado}</td>
-            <td>${device.ubicacion}</td>
+            <td>${escaparTexto(device.id)}</td>
+            <td>${escaparTexto(device.nombre)}</td>
+            <td>${escaparTexto(device.ip)}</td>
+            <td>${escaparTexto(device.marca)}</td>
+            <td>${escaparTexto(device.modelo)}</td>
+            <td>${escaparTexto(device.estado)}</td>
+            <td>${escaparTexto(device.ubicacion)}</td>
             <td>${new Date(device.fecha_actualizacion).toLocaleString()}</td>
         </tr>
-        `;
-
-    });
-
-    document.getElementById("tablaDevices").innerHTML = filas;
-
-})
-
-.catch(error => {
-
-    console.error(
-        "Error cargando dispositivos:",
-        error
-    );
-
-});
+        `).join("");
+        document.getElementById("tablaDevices").innerHTML = filas;
+        // No reconstruir la tabla de logs si no cambio: conserva detalles abiertos.
+        if (JSON.stringify(eventos) !== JSON.stringify(eventosGlobal)) {
+            eventosGlobal = eventos;
+            filtrar(severidadEventos);
+        }
+        const contadores = {total: "total_eventos", criticos: "criticos", errores: "errores", advertencias: "advertencias", informativos: "informativos"};
+        for (const [clase, campo] of Object.entries(contadores)) {
+            const contador = document.querySelector(`#cards .${clase} .numero`);
+            if (contador) contador.textContent = resumen[campo];
+        }
+        document.getElementById("estadoGeneral").innerHTML = resumen.criticos > 0
+            ? '<div class="estado-alerta">🔴 ATENCIÓN REQUERIDA</div>'
+            : '<div class="estado-ok">🟢 NOC OPERACIONAL</div>';
+    } catch (error) {
+        console.error("No se pudo actualizar el dashboard; se reintentara", error);
+    } finally {
+        actualizandoDashboard = false;
+    }
+}
+actualizarDashboard();
+setInterval(actualizarDashboard, 5000);
 
 </script>
 
