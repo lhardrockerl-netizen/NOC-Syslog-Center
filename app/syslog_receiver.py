@@ -5,6 +5,7 @@ import json
 import logging
 import re
 import socket
+import ipaddress
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -47,7 +48,7 @@ def parse_message(data, source_ip):
         header = modern or legacy
         if header and header[1] != "-":
             hostname = header[1]
-    return dict(hostname=hostname, facility=facility, severity=severity, mensaje=raw)
+    return dict(hostname=hostname, facility=facility, severity=severity, mensaje=raw, source_ip=source_ip)
 
 
 def forward_event(event, api_url):
@@ -67,9 +68,15 @@ def main():
     parser.add_argument("--api-url", default="http://127.0.0.1:8000/syslog")
     parser.add_argument("--allow-source", action="append", default=[],
                         help="IP permitida; repetir para varios dispositivos")
+    parser.add_argument("--allow-network", action="append", default=[],
+                        help="Subred autorizada, por ejemplo 192.168.125.0/24")
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("El puerto debe estar entre 1 y 65535")
+    try:
+        networks = [ipaddress.ip_network(value) for value in args.allow_network]
+    except ValueError:
+        parser.error("Subred no valida en --allow-network")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -77,7 +84,8 @@ def main():
             LOG.info("Escuchando UDP %s:%s -> %s", args.host, args.port, args.api_url)
             while True:
                 data, address = sock.recvfrom(65535)
-                if args.allow_source and address[0] not in args.allow_source:
+                if (args.allow_source or networks) and address[0] not in args.allow_source and not any(
+                        ipaddress.ip_address(address[0]) in network for network in networks):
                     continue
                 if not data:
                     continue

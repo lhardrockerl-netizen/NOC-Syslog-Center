@@ -367,7 +367,7 @@ tr:hover{
                 <th>Modelo</th>
                 <th>Estado</th>
                 <th>Ubicación</th>
-                <th>Actualizado</th>
+                <th>Último syslog</th>
             </tr>
         </thead>
 
@@ -858,7 +858,7 @@ async function actualizarDashboard() {
             <td>${escaparTexto(device.modelo)}</td>
             <td>${escaparTexto(device.estado)}</td>
             <td>${escaparTexto(device.ubicacion)}</td>
-            <td>${new Date(device.fecha_actualizacion).toLocaleString()}</td>
+            <td>${device.ultimo_syslog ? new Date(device.ultimo_syslog + (/[zZ]|[+-]\d\d:\d\d$/.test(device.ultimo_syslog) ? "" : "Z")).toLocaleString() : "Sin syslog reciente"}</td>
         </tr>
         `).join("");
         document.getElementById("tablaDevices").innerHTML = filas;

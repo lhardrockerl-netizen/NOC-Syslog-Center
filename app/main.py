@@ -24,10 +24,12 @@ from app.schemas import IncidentCreate
 from app.schemas import IncidentUpdate
 
 from datetime import datetime
-from app.device_sync import sync_device_name, sync_latest_device_names
+from app.device_sync import register_syslog_device, sync_latest_device_names
+from app.schema_migration import ensure_inventory_columns
 from app.alert_rules import classify_event
 
 Base.metadata.create_all(bind=engine)
+ensure_inventory_columns(engine)
 
 with SessionLocal() as initial_db:
     sync_latest_device_names(initial_db)
@@ -187,10 +189,11 @@ def crear_evento_syslog(
     db: Session = Depends(get_db)
 ):
 
-    sync_device_name(db, evento.mensaje)
+    register_syslog_device(db, evento)
 
     nuevo_evento = SyslogEvent(
         hostname=evento.hostname,
+        source_ip=str(evento.source_ip) if evento.source_ip else None,
         facility=evento.facility,
         severity=evento.severity,
         mensaje=evento.mensaje

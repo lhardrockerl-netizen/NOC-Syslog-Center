@@ -25,6 +25,7 @@ class Device(Base):
 
     ubicacion = Column(String)
     estado = Column(String)
+    ultimo_syslog = Column(DateTime, nullable=True)
 
     fecha_actualizacion = Column(
         DateTime,
@@ -39,6 +40,7 @@ class SyslogEvent(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     hostname = Column(String)
+    source_ip = Column(String, nullable=True)
     facility = Column(String)
 
     severity = Column(Integer)

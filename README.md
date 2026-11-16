@@ -189,3 +189,16 @@ Se realizaron pruebas de:
 Jhon Helber Chico
 
 Proyecto académico para la asignatura Administración y Gestión de Redes.
+## Registro automatico de equipos
+
+El receptor adjunta la IP real de origen a cada evento. La API registra equipos nuevos de la red `192.168.125.0/24`, actualiza hostname y ultimo syslog, y conserva los datos editados manualmente. FortiGate usa `devid` como identidad estable; los demas equipos usan su IP. Modelo y version desconocidos quedan por confirmar. El estado `Reportando` indica recepcion de un log, no disponibilidad continua.
+
+Iniciar el receptor autorizando el laboratorio:
+
+```powershell
+python -m app.syslog_receiver --port 514 --allow-network 192.168.125.0/24 --allow-source 127.0.0.1
+```
+
+Para aceptar nuevos equipos tambien debe permitirse UDP 514 en Windows desde su IP o desde la subred del laboratorio. Los eventos de localhost no generan equipos nuevos. `NOC_AUTOREGISTER_NETWORKS` permite cambiar las subredes de alta autorizadas de la API (separadas por comas); la autorizacion de recepcion UDP se configura por separado.
+
+La migracion agrega columnas sin borrar datos existentes. Para equipos sin identificador estable, un cambio simultaneo de IP y hostname puede requerir reconciliacion manual. La deteccion de fabricante es orientativa y depende del contenido del log.

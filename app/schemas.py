@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+from pydantic import IPvAnyAddress
+from typing import Optional
 
 
 class DeviceCreate(BaseModel):
@@ -27,6 +29,7 @@ class SyslogEventCreate(BaseModel):
     facility: str
     severity: int
     mensaje: str
+    source_ip: Optional[IPvAnyAddress] = None
 
 class IncidentCreate(BaseModel):
 
